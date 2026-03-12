@@ -112,14 +112,17 @@ export class HttpMonitor {
 				]
 
 				if (p.allowDelete) {
-					// Add a handler for delete
-					handlers.splice(0, 0, function (req, res, next) {
-						if (req.method !== 'DELETE') {
-							next()
+					app.delete('/' + p.name + '/*filePath', (req, res) => {
+						const filePath = Array.isArray(req.params.filePath) ? req.params.filePath.join('/') : req.params.filePath
+						const fullPath = path.join(p.path, filePath)
+						const resolvedPath = path.resolve(fullPath)
+						const resolvedBase = path.resolve(p.path)
+
+						if (!resolvedPath.startsWith(resolvedBase + path.sep) && resolvedPath !== resolvedBase) {
+							res.sendStatus(403)
 							return
 						}
 
-						const fullPath = path.join(p.path, req.url)
 						log.info('Deleting file: ' + fullPath)
 
 						fs.unlink(fullPath, (err) => {
